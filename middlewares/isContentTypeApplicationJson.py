@@ -15,8 +15,6 @@ class IsContentTypeApplicationJson:
             response_status = 400
             return JSONResponse(status_code=response_status, content= MensagemErro(response_status).json )
         
-        print(content_type)
-        
         response = await call_next(request)
         
         return response
