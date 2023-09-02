@@ -11,8 +11,6 @@ class IsRequestBodyOK:
         request_route = request.url.path
         request_json = await request.json()
         
-        request.error = None
-                
         if (request_method == "GET"):
             return 
         

@@ -2,7 +2,6 @@ from typing import Mapping
 from fastapi import FastAPI, APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi import Depends
-from middlewares.isAuth import IsAuth
 from schemas.mensagem_erro import MensagemErro
 
 from sqlalchemy import create_engine
@@ -15,6 +14,8 @@ from schemas.usuario import UsuarioPartial, Usuario
 from starlette.middleware.base import BaseHTTPMiddleware
 from middlewares.isRequestBodyOK import IsRequestBodyOK
 from middlewares.isContentTypeApplicationJson import IsContentTypeApplicationJson
+from middlewares.isAuth import IsAuth
+from middlewares.isException import isException
 
 # Cria uma instância do FastAPI
 app = FastAPI()
@@ -47,7 +48,7 @@ is_auth = IsAuth()
 # Define a rota POST para criar um usuário
 @api_router.post("/usuario/")
 async def criar_usuario(arg: Mapping[str, str], request: Request):
-    if (request.error): return JSONResponse( status_code= request.error, content= MensagemErro(request.error).json )
+    if (isException(request)): return isException(request) 
     
     return JSONResponse(
         status_code= 200,
@@ -57,7 +58,7 @@ async def criar_usuario(arg: Mapping[str, str], request: Request):
 # Define a rota POST para criar um usuário
 @api_router.delete("/usuario/")
 async def criar_usuario(arg: Mapping[str, str], request: Request):
-    if (request.error): return JSONResponse( status_code= request.error, content= MensagemErro(request.error).json )
+    if (isException(request)): return isException(request)
     
     return JSONResponse(
         status_code= 200,
@@ -65,7 +66,9 @@ async def criar_usuario(arg: Mapping[str, str], request: Request):
     )
     
 @api_router.get("/usuarios/{usuario_id}")
-def ler_usuario(usuario_id: int):
+def ler_usuario(usuario_id: int, request: Request):
+    if (isException(request)): return isException(request) 
+    
     print("ler usuario")
     db = SessionLocal()
     usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()

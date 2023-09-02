@@ -7,8 +7,6 @@ class IsContentTypeApplicationJson:
         print("IsContentTypeApplicationJson")
         request_method = request.method
         
-        request.error = None
-        
         content_type = request.headers.get('Content-Type')
         
         if (request_method == "GET"):
