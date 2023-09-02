@@ -64,7 +64,6 @@ async def criar_usuario(arg: Mapping[str, str], request: Request):
         content= arg
     )
     
-# Define a rota GET para ler informações de um usuário pelo ID
 @api_router.get("/usuarios/{usuario_id}")
 def ler_usuario(usuario_id: int):
     print("ler usuario")
