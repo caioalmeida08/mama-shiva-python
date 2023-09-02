@@ -19,6 +19,7 @@ class IsRequestBodyOK:
                 return UsuarioPartial(**request_json)
             except ValidationError as e:
                 request.error = 400
+                request.error_instance = e
         
         if (request_route == "/usuario/{usuario_id}"):
             try:
@@ -26,6 +27,7 @@ class IsRequestBodyOK:
                 
             except ValidationError as e:
                 request.error = 400
+                request.error_instance = e
         
         if (request_route == "/usuario/authenticate/"):
             try:
@@ -37,3 +39,4 @@ class IsRequestBodyOK:
                                 
             except Exception as e:
                 request.error = 400
+                request.error_instance = e

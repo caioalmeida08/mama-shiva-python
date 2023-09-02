@@ -50,10 +50,20 @@ is_auth = IsAuth()
 async def criar_usuario(arg: Mapping[str, str], request: Request):
     if (isException(request)): return isException(request) 
     
-    return JSONResponse(
-        status_code= 200,
-        content= arg
-    )
+    try:
+        db = SessionLocal()
+        db_usuario = UsuarioPartial(**arg)
+        db.add(db_usuario)
+        db.commit()
+        db.refresh(db_usuario)
+        return db_usuario
+    except Exception as e:
+        print(e)
+        return JSONResponse(
+            status_code= 400,
+            content= MensagemErro(400).json
+        )
+
     
 # Define a rota POST para criar um usuário
 @api_router.delete("/usuario/")

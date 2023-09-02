@@ -14,3 +14,4 @@ class IsContentTypeApplicationJson:
         
         if (content_type != "application/json"):
             request.error = 400
+            request.error_instance = Exception("O cabeçalho 'Content-Type' deve ser 'application/json'")

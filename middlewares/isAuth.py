@@ -19,4 +19,5 @@ class IsAuth:
         if (not "Authenticate" in request_cookies):
             if (request_method_route not in rotas_sem_autenticacao):
                 request.error = 401
+                request.error_instance = Exception("Usuário não autenticado")
                 return
