@@ -1,4 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from typing import Mapping
+from fastapi import FastAPI, APIRouter, HTTPException, Request
+from fastapi.responses import JSONResponse
+from fastapi import Depends
+from middlewares.isAuth import IsAuth
+from schemas.mensagem_erro import MensagemErro
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -6,11 +12,13 @@ from sqlalchemy.ext.declarative import declarative_base
 from models.usuario import Usuario
 from schemas.usuario import UsuarioPartial, Usuario
 
-from middlewares.isContentTypeApplicationJson import IsContentTypeApplicationJson
 from starlette.middleware.base import BaseHTTPMiddleware
+from middlewares.isRequestBodyOK import IsRequestBodyOK
+from middlewares.isContentTypeApplicationJson import IsContentTypeApplicationJson
 
 # Cria uma instância do FastAPI
 app = FastAPI()
+api_router = APIRouter()
 
 # URL de conexão com o banco de dados SQLite
 DATABASE_URL = "sqlite:///./teste.db"
@@ -27,19 +35,39 @@ Base = declarative_base()
 # Cria as tabelas no banco de dados
 Base.metadata.create_all(bind=engine)
 
+# Garante que as requisições tenham o cabeçalho Content-Type: application/json
 is_content_type_application_json = IsContentTypeApplicationJson()
-app.add_middleware(BaseHTTPMiddleware, dispatch=is_content_type_application_json)
+
+# Garante que o corpo da requisição seja um objeto do tipo esperado pela rota
+is_request_body_ok = IsRequestBodyOK()
+
+# Garante que o usuário esteja autenticado
+is_auth = IsAuth()
 
 # Define a rota POST para criar um usuário
-@app.post("/usuario/", response_model= UsuarioPartial)
-def criar_usuario(usuario: Usuario):
-    return {"ok": "ok"}
+@api_router.post("/usuario/")
+async def criar_usuario(arg: Mapping[str, str], request: Request):
+    if (request.error): return JSONResponse( status_code= request.error, content= MensagemErro(request.error).json )
     
+    return JSONResponse(
+        status_code= 200,
+        content= arg
+    )
     
-
+# Define a rota POST para criar um usuário
+@api_router.delete("/usuario/")
+async def criar_usuario(arg: Mapping[str, str], request: Request):
+    if (request.error): return JSONResponse( status_code= request.error, content= MensagemErro(request.error).json )
+    
+    return JSONResponse(
+        status_code= 200,
+        content= arg
+    )
+    
 # Define a rota GET para ler informações de um usuário pelo ID
-@app.get("/usuarios/{usuario_id}", response_model=UsuarioPartial)
+@api_router.get("/usuarios/{usuario_id}")
 def ler_usuario(usuario_id: int):
+    print("ler usuario")
     db = SessionLocal()
     usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
     
@@ -47,3 +75,10 @@ def ler_usuario(usuario_id: int):
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     
     return usuario
+
+# Liga os middlewares. Manter sempre após o fim das rotas.
+app.include_router(api_router, dependencies=[
+    Depends(is_auth),
+    Depends(is_content_type_application_json),
+    Depends(is_request_body_ok)]
+    )
