@@ -7,10 +7,11 @@ class IsContentTypeApplicationJson:
         print("IsContentTypeApplicationJson")
         request_method = request.method
         
-        content_type = request.headers.get('Content-Type')
-        
+        # Ignora rotas GET
         if (request_method == "GET"):
             return
+        
+        content_type = request.headers.get('Content-Type')
         
         if (content_type != "application/json"):
             request.error = 400

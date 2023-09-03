@@ -1,15 +1,19 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # Define o modelo Pydantic para a entrada de informações ao criar um usuário
 class UsuarioPartial(BaseModel):
-    usuario_id: str
-    usuario_cpf: str
-    usuario_nome: str
-    usuario_email: str
-    usuario_senha: str
-    usuario_telefone: str
+    usuario_cpf: str = Field(..., max_length=11, min_length=11)
+    usuario_nome: str = Field(..., max_length=128, min_lenght=3)
+    usuario_email: str = Field(..., max_length=128, min_lenght=3)
+    usuario_senha: str = Field(..., max_length=256, min_lenght=6)
+    usuario_telefone: str = Field(..., max_length=11, min_length=10)
+    
+    class Config:
+        from_attributes = True
     
 # Define o modelo Pydantic para a saída de informações do usuário
 class Usuario(UsuarioPartial):
-    usuario_id: int
+    usuario_id: str = Field(..., max_length=36, min_length=36, primary_key=True)
+    
+    
     

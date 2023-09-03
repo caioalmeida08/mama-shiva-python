@@ -1,16 +1,19 @@
-from main import SessionLocal
-from models.usuario import Usuario
-from schemas.mensagem_erro import MensagemErro
+from models.usuario import UsuarioModel
+from schemas.usuario import Usuario
 
-def create_usuario(usuario: Usuario, SessionLocal: SessionLocal):
-    db = SessionLocal()
-    
-    try:
-        db_usuario = Usuario(**usuario.dict())
-    except :
-        print("erro aqui")
-        raise MensagemErro(400)
-    
+from sqlalchemy.orm import Session
+
+def get_all_usuario(db: Session):
+    print("get_all_usuario")
+    return db.query(UsuarioModel).all()
+
+def get_usuario_by_id(db: Session, usuario_id: str):
+    print("get_usuario_by_id")
+    return db.query(UsuarioModel).filter(UsuarioModel.usuario_id == usuario_id).first()
+
+def create_usuario(db: Session, usuario: Usuario):
+    print("create_usuario")
+    db_usuario = UsuarioModel(**usuario)
     db.add(db_usuario)
     db.commit()
     db.refresh(db_usuario)

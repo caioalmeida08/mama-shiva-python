@@ -1,18 +1,17 @@
-from fastapi import Request, status
-from fastapi.responses import JSONResponse
-from schemas.mensagem_erro import MensagemErro
+from fastapi import Request
 from schemas.usuario import UsuarioPartial, Usuario
 from pydantic import ValidationError
 
 class IsRequestBodyOK:
     async def __call__(self, request: Request):
         print("IsRequestBodyOK")
-        request_method = request.method
+        
+        # Ignora rotas GET
+        if (request.method == "GET"):
+            return 
+        
         request_route = request.url.path
         request_json = await request.json()
-        
-        if (request_method == "GET"):
-            return 
         
         if (request_route == "/usuario/"):            
             try:
@@ -23,8 +22,7 @@ class IsRequestBodyOK:
         
         if (request_route == "/usuario/{usuario_id}"):
             try:
-                usuario = Usuario(**request_json)
-                
+                return Usuario(**request_json)
             except ValidationError as e:
                 request.error = 400
                 request.error_instance = e

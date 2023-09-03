@@ -10,14 +10,19 @@ rotas_sem_autenticacao = [
 class IsAuth:
     async def __call__(self, request: Request): 
         print("IsAuth")  
-        request_cookies = request.cookies
         
         request_method_route = { "method": request.method, "route": request.url.path }
         
         request.error = None
+        request.error_instance = None
         
+        # Ignora rotas que não necessitam de autenticação
+        if (request_method_route in rotas_sem_autenticacao):
+            return
+        
+        request_cookies = request.cookies
+
         if (not "Authenticate" in request_cookies):
-            if (request_method_route not in rotas_sem_autenticacao):
-                request.error = 401
-                request.error_instance = Exception("Usuário não autenticado")
-                return
+            request.error = 401
+            request.error_instance = Exception("Usuário não autenticado")
+            return
