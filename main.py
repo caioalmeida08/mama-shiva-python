@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from controllers.usuario import create_usuario
 
-from models.usuario import UsuarioDB 
+from models.usuario import Usuarios as UsuarioDB
 from schemas.usuario import UsuarioPartial, Usuario
 
 from middlewares.isContentTypeApplicationJson import IsContentTypeApplicationJson

@@ -1,5 +1,5 @@
 from sqlalchemy.orm.session import Session
-from models.usuario import UsuarioDB
+from models.usuario import Usuarios as UsuarioDB
 from schemas.usuario import UsuarioPartial
 from schemas.mensagem_erro import MensagemErro
 
