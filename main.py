@@ -3,9 +3,9 @@ from fastapi import FastAPI, HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from controllers.usuario import create_usuario
 
-from models.usuario import Usuarios as UsuarioDB
+
+from controllers.usuario import create_usuario, delete_usuario, put_usuario, read_usuario
 from schemas.usuario import UsuarioPartial, Usuario
 
 from middlewares.isContentTypeApplicationJson import IsContentTypeApplicationJson
@@ -40,10 +40,12 @@ def criar_usuario(usuario: UsuarioPartial):
 # Define a rota GET para ler informações de um usuário pelo ID
 @app.get("/usuario/{usuario_id}", response_model=Usuario)
 def ler_usuario(usuario_id: int):
-    db = SessionLocal()
-    usuario = db.query(UsuarioDB).filter(UsuarioDB.id == usuario_id).first()
-    
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado")
-    
-    return usuario
+    return read_usuario(usuario_id, SessionLocal)
+
+@app.put("/usuario/{usuario_id}", response_model=Usuario)
+def atualizar_usuario(usuario_id: int, usuario: UsuarioPartial):
+    return put_usuario(usuario_id, usuario, SessionLocal)
+
+@app.delete("/usuario/{usuario_id}", response_model=Usuario)
+def deletar_usuario(usuario_id: int):
+    return delete_usuario(usuario_id, SessionLocal)

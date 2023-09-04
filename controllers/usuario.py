@@ -15,3 +15,42 @@ def create_usuario(usuario: UsuarioPartial, SessionLocal: Session):
     db.commit()
     db.refresh(db_usuario)
     return db_usuario
+
+def read_usuario(usuario_id: int, SessionLocal: Session):
+    db = SessionLocal()
+    usuario = db.query(UsuarioDB).filter(UsuarioDB.id == usuario_id).first()
+    
+    if not usuario:
+        raise MensagemErro(404)
+    
+    return usuario
+
+def put_usuario(usuario_id: int, usuario: UsuarioPartial, SessionLocal: Session):
+    db = SessionLocal()
+    db_usuario = db.query(UsuarioDB).filter(UsuarioDB.id == usuario_id).first()
+    
+    if not db_usuario:
+        raise MensagemErro(404)
+    
+    db_usuario.cpf = usuario.cpf
+    db_usuario.nome = usuario.nome
+    db_usuario.email = usuario.email
+    db_usuario.senha = usuario.senha
+    db_usuario.telefone = usuario.telefone
+    
+    db.commit()
+    db.refresh(db_usuario)
+    
+    return db_usuario
+
+def delete_usuario (usuario_id: int, SessionLocal: Session):
+    db = SessionLocal()
+    db_usuario = db.query(UsuarioDB).filter(UsuarioDB.id == usuario_id).first()
+    
+    if not db_usuario:
+        raise MensagemErro(404)
+    
+    db.delete(db_usuario)
+    db.commit()
+    
+    return db_usuario
