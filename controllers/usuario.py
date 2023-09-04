@@ -1,14 +1,14 @@
-from main import SessionLocal
-from models.usuario import Usuario
+from sqlalchemy.orm.session import Session
+from models.usuario import UsuarioDB
+from schemas.usuario import UsuarioPartial
 from schemas.mensagem_erro import MensagemErro
 
-def create_usuario(usuario: Usuario, SessionLocal: SessionLocal):
+def create_usuario(usuario: UsuarioPartial, SessionLocal: Session):
     db = SessionLocal()
-    
     try:
-        db_usuario = Usuario(**usuario.dict())
-    except :
-        print("erro aqui")
+        db_usuario = UsuarioDB(**usuario.dict())
+    except:
+        print("Erro:")
         raise MensagemErro(400)
     
     db.add(db_usuario)

@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
 # Define a classe de modelo do SQLAlchemy para a tabela "usuarios"
-class Usuario(Base):
+class UsuarioDB(Base):
     __tablename__ = "usuarios"
 
     id = Column(Integer, primary_key=True, index=True)
