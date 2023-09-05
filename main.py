@@ -5,10 +5,11 @@ from fastapi.responses import JSONResponse
 from fastapi import Depends
 
 from sqlalchemy.orm import Session
+from controllers.endereco import create_endereco
 
 from database.database import SessionLocal, engine
 
-from controllers.usuario import create_usuario, get_all_usuario
+from controllers.usuario import create_usuario, delete_usuario, get_all_usuario, get_usuario_by_id, put_usuario
 
 from models.usuario import UsuarioModel
 
@@ -71,6 +72,71 @@ async def createUsuario(arg: Mapping[str, str], request: Request, db: Session = 
             status_code= 400,
             content= MensagemErro(400).json
         )
+
+@api_router.get("/usuario/{usuario_id}")
+async def findUsuarioById(usuario_id: str, request: Request, db: Session = Depends(get_db)):
+    if (isException(request)): return isException(request) 
+    try:
+        usuario = get_usuario_by_id(db, usuario_id)
+        return usuario
+    except Exception as e:
+        print("findUsuarioById")
+        print(e)
+        return JSONResponse(
+            status_code= 400,
+            content= MensagemErro(400).json
+        )
+
+@api_router.put("/usuario/{usuario_id}")
+async def putUsuario(usuario_id: str,usuario_data: Usuario, request: Request,db: Session = Depends(get_db)
+):
+    if isException(request):
+        return isException(request)
+
+    try:
+        updated_usuario = put_usuario(db, usuario_id, usuario_data)
+        if updated_usuario:
+            return updated_usuario  # Retorna os dados atualizados do usuário
+        else:
+            return JSONResponse(status_code=404, content={"error": "Usuário não encontrado"})
+    except Exception as e:
+        print("putUsuario")
+        print(e)
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Erro ao atualizar usuário"}
+        )
+    
+@api_router.delete("/usuario/{usuario_id}")
+async def deleteUsuario(usuario_id: str, request: Request, db: Session = Depends(get_db)):
+    if (isException(request)): return isException(request) 
+    
+    try:
+        return delete_usuario(db, usuario_id)
+    except Exception as e:
+        print("deleteUsuario")
+        print(e)
+        return JSONResponse(
+            status_code= 400,
+            content= MensagemErro(400).json
+        )
+    
+
+@api_router.post("/endereco/")
+async def createEndereco(arg: Mapping[str, str], request: Request, db: Session = Depends(get_db)):
+    if (isException(request)): return isException(request) 
+    
+    try:
+        return create_endereco(db, arg)
+    except Exception as e:
+        print("createEndereco")
+        print(e)
+        return JSONResponse(
+            status_code= 400,
+            content= MensagemErro(400).json
+        )
+    
+
 
 # Liga os middlewares. Manter sempre após o fim das rotas.
 # Não alterar a ordem dos middlewares.
