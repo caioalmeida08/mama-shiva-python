@@ -5,16 +5,22 @@ from fastapi.responses import JSONResponse
 from fastapi import Depends
 
 from sqlalchemy.orm import Session
-from controllers.endereco import create_endereco
+from database.database import Base
+
+
 
 from database.database import SessionLocal, engine
 
-from controllers.usuario import create_usuario, delete_usuario, get_all_usuario, get_usuario_by_id, put_usuario
-
 from models.usuario import UsuarioModel
-
+from controllers.usuario import create_usuario, delete_usuario, get_all_usuario, get_usuario_by_id, put_usuario
 from schemas.usuario import Usuario
+
+from models.endereco import EnderecoModel
+from schemas.endereco import Endereco
+from controllers.endereco import create_endereco, delete_endereco, get_all_endereco, get_endereco_by_id, put_endereco
+
 from schemas.mensagem_erro import MensagemErro
+
 
 
 from middlewares.isRequestBodyOK import IsRequestBodyOK
@@ -27,7 +33,8 @@ app = FastAPI()
 api_router = APIRouter()
 
 # Cria uma conexão com o banco de dados
-UsuarioModel.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
+
 def get_db():
     db = SessionLocal()
     try:
@@ -121,7 +128,6 @@ async def deleteUsuario(usuario_id: str, request: Request, db: Session = Depends
             content= MensagemErro(400).json
         )
     
-
 @api_router.post("/endereco/")
 async def createEndereco(arg: Mapping[str, str], request: Request, db: Session = Depends(get_db)):
     if (isException(request)): return isException(request) 
@@ -135,6 +141,9 @@ async def createEndereco(arg: Mapping[str, str], request: Request, db: Session =
             status_code= 400,
             content= MensagemErro(400).json
         )
+    
+
+
     
 
 

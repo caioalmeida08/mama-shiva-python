@@ -1,10 +1,10 @@
 import uuid
 from sqlalchemy import Column, String, Text
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
-# Define a classe de modelo do SQLAlchemy para a tabela "usuarios"
 class UsuarioModel(Base):
     __tablename__ = "usuarios"
     
@@ -14,3 +14,4 @@ class UsuarioModel(Base):
     usuario_email = Column(String, unique=True, index=True)
     usuario_senha = Column(String)
     usuario_telefone = Column(String)
+    enderecos = relationship("EnderecoModel", back_populates="usuario")
