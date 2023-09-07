@@ -1,28 +1,36 @@
-from fastapi import Request, status
-from fastapi.responses import JSONResponse
+from fastapi import Request
 
-# Lista de rotas que não necessitam de autenticação
-rotas_sem_autenticacao = [
-    { "method": "POST", "route": "/usuario/" },
-    { "method": "POST", "route": "/usuario/authenticate" },
+from controllers.usuario import check_token
+
+class Rota:
+    def __init__(self, metodo: str, path: str) -> None:
+        self.metodo = metodo
+        self.path = path
+        
+    def __eq__(self, other):
+        return self.metodo == other.metodo and self.path == other.path
+    
+rotasSemAutenticacao = [
+    Rota("POST", "/usuario/authenticate/"),
+    Rota("POST", "/usuario/"),
+    # Rota("GET", "/usuario/"),
 ]
 
-class IsAuth:
-    async def __call__(self, request: Request): 
-        print("IsAuth")  
-        
-        request_method_route = { "method": request.method, "route": request.url.path }
-        
-        request.error = None
-        request.error_instance = None
-        
-        # Ignora rotas que não necessitam de autenticação
-        if (request_method_route in rotas_sem_autenticacao):
-            return
-        
-        request_cookies = request.cookies
-
-        if (not "Authenticate" in request_cookies):
-            request.error = 401
-            request.error_instance = Exception("Usuário não autenticado")
-            return
+async def isAuth(request: Request) -> bool:
+    print("isAuth (isAuth.py) - START")
+    
+    rota_atual = Rota(request.method, request.url.path)
+    
+    if (rota_atual in rotasSemAutenticacao):
+        print("isAuth (isAuth.py) - OK (SEM AUTENTICAÇÃO)")
+        return True
+    
+    if (not request.headers.get("Authorization")):
+        print("isAuth (isAuth.py) - NOT OK (AUTHORIZATION NOT PROVIDED)")
+        return False
+    
+    print("isAuth (isAuth.py) - (STARTING CHECK)")
+    check_token(request.headers.get("Authorization"))
+    
+    
+    return True

@@ -1,4 +1,5 @@
 import uuid
+import bcrypt
 from sqlalchemy import Column, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -14,3 +15,13 @@ class UsuarioModel(Base):
     usuario_email = Column(String, unique=True, index=True)
     usuario_senha = Column(String)
     usuario_telefone = Column(String)
+    
+    def __init__(self, usuario_cpf: str, usuario_nome: str, usuario_email: str, usuario_senha: str, usuario_telefone: str) -> None:
+        self.usuario_cpf = usuario_cpf
+        self.usuario_nome = usuario_nome
+        self.usuario_email = usuario_email
+        self.usuario_senha = bcrypt.hashpw(usuario_senha.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.usuario_telefone = usuario_telefone
+    
+    def verify_password(self, senha: str) -> bool:
+        return bcrypt.checkpw(senha.encode('utf-8'), self.usuario_senha.encode('utf-8'))

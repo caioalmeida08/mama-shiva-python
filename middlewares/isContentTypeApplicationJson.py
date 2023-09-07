@@ -1,18 +1,18 @@
-from fastapi import Request, status
-from fastapi.responses import JSONResponse
-from schemas.mensagem_erro import MensagemErro
+from fastapi import Request
 
-class IsContentTypeApplicationJson:
-    async def __call__(self, request: Request):        
-        print("IsContentTypeApplicationJson")
-        request_method = request.method
+def isContentTypeApplicationJson(request: Request) -> bool:
+    print("isContentTypeApplicationJson (isContentTypeApplicationJson.py) - START")
+    
+    if (request.method == "GET"):
+        print("isContentTypeApplicationJson (isContentTypeApplicationJson.py) - OK (GET)")
+        return True
+
+    content_type = request.headers.get("Content-Type")
+    print("isContentTypeApplicationJson (isContentTypeApplicationJson.py) - content_type: " + str(content_type))
+    
+    if (content_type == "application/json"):
+        print("isContentTypeApplicationJson (isContentTypeApplicationJson.py) - OK")
+        return True
         
-        # Ignora rotas GET
-        if (request_method == "GET"):
-            return
-        
-        content_type = request.headers.get('Content-Type')
-        
-        if (content_type != "application/json"):
-            request.error = 400
-            request.error_instance = Exception("O cabeçalho 'Content-Type' deve ser 'application/json'")
+    print("isContentTypeApplicationJson (isContentTypeApplicationJson.py) - NOT OK")
+    return False

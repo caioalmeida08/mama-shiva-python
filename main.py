@@ -1,30 +1,62 @@
-from typing import Mapping
+from typing import Annotated, Mapping
+from uuid import uuid4
 
-from fastapi import FastAPI, APIRouter, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
 
 from sqlalchemy.orm import Session
 
 from database.database import SessionLocal, engine
 
-from controllers.usuario import create_usuario, get_all_usuario
+from controllers.usuario import create_usuario, get_all_usuario, get_usuario_by_email, create_access_token, create_refresh_token
 
 from models.usuario import UsuarioModel
 
-from schemas.usuario import Usuario
+from schemas.usuario import Usuario, UsuarioPartial
 from schemas.mensagem_erro import MensagemErro
 
+from middlewares.isContentTypeApplicationJson import isContentTypeApplicationJson
+from middlewares.isRequestBodyOK import isRequestBodyOK
+from middlewares.isAuth import isAuth
 
-from middlewares.isRequestBodyOK import IsRequestBodyOK
-from middlewares.isContentTypeApplicationJson import IsContentTypeApplicationJson
-from middlewares.isAuth import IsAuth
-from middlewares.isException import isException
 
 # Cria uma instância do FastAPI
 app = FastAPI()
-api_router = APIRouter()
 
+# Habilita ou desabilita o modo de debug
+app.state.debug = True
+
+# Middlewares
+async def middlewares(request: Request):
+    isContentTypeApplicationJsonMiddleware = isContentTypeApplicationJson(request)
+    print("middlewares (main.py) - isContentTypeApplicationJsonMiddleware: " + str(isContentTypeApplicationJsonMiddleware))
+    
+    if (not isContentTypeApplicationJsonMiddleware):
+        if (request.app.state.debug):
+            raise HTTPException(status_code=400, detail="Content-Type inválido. Valor recebido: " + str(request.headers.get("Content-Type")))
+        else:
+            raise HTTPException(status_code=400, detail=MensagemErro(400).message)
+        
+    isRequestBodyOKMiddleware = await isRequestBodyOK(request)
+    print("middlewares (main.py) - isRequestBodyOKMiddleware: " + str(isRequestBodyOKMiddleware))
+    
+    if (not isRequestBodyOKMiddleware):
+        if (request.app.state.debug):
+            raise HTTPException(status_code=400, detail="Body inválido. Valor recebido: " + str(await request.body()))
+        else:
+            raise HTTPException(status_code=400, detail=MensagemErro(400).message)
+        
+    isAuthMiddleware = await isAuth(request)
+    print("middlewares (main.py) - isAuthMiddleware: " + str(isAuthMiddleware))
+    
+    if (not isAuthMiddleware):
+        if (request.app.state.debug):
+            raise HTTPException(status_code=401, detail="Não autorizado")
+        else:
+            raise HTTPException(status_code=401, detail=MensagemErro(401).message)
+    
 # Cria uma conexão com o banco de dados
 UsuarioModel.metadata.create_all(bind=engine)
 def get_db():
@@ -34,49 +66,75 @@ def get_db():
     finally:
         db.close()
 
-# Garante que o usuário esteja autenticado
-is_auth = IsAuth()
-
-# Garante que as requisições tenham o cabeçalho Content-Type: application/json
-is_content_type_application_json = IsContentTypeApplicationJson()
-
-# Garante que o corpo da requisição seja um objeto do tipo esperado pela rota
-is_request_body_ok = IsRequestBodyOK()
-
-@api_router.get("/usuario/")
-async def findAllUsuario(request: Request, db: Session = Depends(get_db)):
-    if (isException(request)): return isException(request) 
-    
+@app.get("/usuario/")
+async def findAllUsuario(request: Request, response: Response, middleware: Mapping = Depends(middlewares), db: Session = Depends(get_db)):
     try:
-        usuarios = get_all_usuario(db)
-        return usuarios
+        return get_all_usuario(db)
     except Exception as e:
-        print("findAllUsuario")
-        print(e)
-        return JSONResponse(
-            status_code= 400,
-            content= MensagemErro(400).json
-        )
+        if(request.app.state.debug):
+            raise HTTPException(status_code=400, detail=str(e))
+        
+        raise HTTPException(status_code=400, detail=MensagemErro(400).message)
 
-@api_router.post("/usuario/")
-async def createUsuario(arg: Mapping[str, str], request: Request, db: Session = Depends(get_db)):
-    if (isException(request)): return isException(request) 
-    
+@app.post("/usuario/")
+async def createUsuario(request: Request, response: Response, middleware: Mapping = Depends(middlewares), db: Session = Depends(get_db)):
     try:
-        return create_usuario(db, arg)
-    except Exception as e:
-        print("createUsuario")
-        print(e)
-        return JSONResponse(
-            status_code= 400,
-            content= MensagemErro(400).json
-        )
+        request_json = await request.json()
+        
+        usuarioPartial = UsuarioPartial(**request_json)
 
-# Liga os middlewares. Manter sempre após o fim das rotas.
-# Não alterar a ordem dos middlewares.
-app.include_router(api_router, dependencies=[
-    Depends(is_auth),
-    Depends(is_content_type_application_json),
-    Depends(is_request_body_ok),
-    ]
-    )
+        usuario = UsuarioModel(
+            usuario_cpf=usuarioPartial.usuario_cpf,
+            usuario_nome=usuarioPartial.usuario_nome,
+            usuario_email=usuarioPartial.usuario_email,
+            usuario_senha=usuarioPartial.usuario_senha,
+            usuario_telefone=usuarioPartial.usuario_telefone
+        )
+        
+        return create_usuario(db, usuario)
+        
+    except Exception as e:
+        if(request.app.state.debug):
+            raise HTTPException(status_code=400, detail=str(e))
+        
+        raise HTTPException(status_code=400, detail=MensagemErro(400).message)
+
+@app.post("/usuario/authenticate/")
+async def authenticateUsuario(request: Request, response: Response, middleware: Mapping = Depends(middlewares), db: Session = Depends(get_db)):
+    try:
+        request_json = await request.json()
+        request_email = request_json.get("usuario_email")
+        request_senha = request_json.get("usuario_senha")
+        
+        if (not request_email):
+            raise Exception("O campo 'usuario_email' é obrigatório")
+        
+        if (not request_senha):
+            raise Exception("O campo 'usuario_senha' é obrigatório")
+        
+        usuarioDB = get_usuario_by_email(db, request_email)
+        
+        if (not usuarioDB):
+            if(request.app.state.debug):
+                raise Exception("Usuário não encontrado")
+            
+            raise Exception(MensagemErro(404).message)
+        
+        isRightPassword = usuarioDB.verify_password(request_senha)
+        
+        if (not isRightPassword):
+            if(request.app.state.debug):
+                raise Exception("Senha incorreta")
+            
+            raise Exception(MensagemErro(401).message)
+        
+        response.headers["Authorization"] = "Bearer " + create_access_token(usuarioDB.usuario_id)
+        response.headers["Refresh-Token"] = create_refresh_token(usuarioDB.usuario_id)
+        
+    except Exception as e:
+        if(request.app.state.debug):
+            raise HTTPException(status_code=404, detail=str(e))
+        
+        raise HTTPException(status_code=404, detail=MensagemErro(404).message)
+    
+    return {"hello": "world"}
