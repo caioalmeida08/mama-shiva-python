@@ -69,7 +69,11 @@ def get_db():
 @app.get("/usuario/")
 async def findAllUsuario(request: Request, response: Response, middleware: Mapping = Depends(middlewares), db: Session = Depends(get_db)):
     try:
-        return get_all_usuario(db)
+        usuarios = get_all_usuario(db)
+        for usuario in usuarios:
+            usuario.usuario_senha = None
+            
+        return usuarios 
     except Exception as e:
         if(request.app.state.debug):
             raise HTTPException(status_code=400, detail=str(e))
@@ -91,7 +95,9 @@ async def createUsuario(request: Request, response: Response, middleware: Mappin
             usuario_telefone=usuarioPartial.usuario_telefone
         )
         
-        return create_usuario(db, usuario)
+        usuarioDb = create_usuario(db, usuario)
+        usuarioDb.usuario_senha = None
+        return usuarioDb
         
     except Exception as e:
         if(request.app.state.debug):
@@ -137,4 +143,9 @@ async def authenticateUsuario(request: Request, response: Response, middleware: 
         
         raise HTTPException(status_code=404, detail=MensagemErro(404).message)
     
-    return {"hello": "world"}
+    return {
+        "usuario_id": usuarioDB.usuario_id,
+        "usuario_nome": usuarioDB.usuario_nome,
+        "usuario_email": usuarioDB.usuario_email,
+        "usuario_telefone": usuarioDB.usuario_telefone
+    }
