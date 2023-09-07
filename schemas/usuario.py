@@ -17,3 +17,4 @@ class Usuario(UsuarioPartial):
     
     
     
+    
