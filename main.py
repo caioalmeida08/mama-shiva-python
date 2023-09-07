@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from database.database import SessionLocal, engine
 
-from controllers.usuario import create_usuario, get_all_usuario, get_usuario_by_email, create_access_token, create_refresh_token
+from controllers.usuario import create_usuario, delete_usuario, get_all_usuario, get_usuario_by_email,get_usuario_by_id, create_access_token, create_refresh_token, update_usuario
 
 from models.usuario import UsuarioModel
 
@@ -149,3 +149,52 @@ async def authenticateUsuario(request: Request, response: Response, middleware: 
         "usuario_email": usuarioDB.usuario_email,
         "usuario_telefone": usuarioDB.usuario_telefone
     }
+
+@app.get("/usuario/{usuario_id}")
+async def findUsuarioById(request: Request, response: Response, middleware: Mapping = Depends(middlewares), usuario_id: str = None, db: Session = Depends(get_db)):
+    try:
+        usuario = get_usuario_by_id(db, usuario_id)
+        usuario.usuario_senha = None
+        return usuario
+    except Exception as e:
+        if(request.app.state.debug):
+            raise HTTPException(status_code=404, detail=str(e))
+        
+        raise HTTPException(status_code=404, detail=MensagemErro(404).message)
+    
+@app.put("/usuario/{usuario_id}")
+async def updateUsuario(request: Request, response: Response, middleware: Mapping = Depends(middlewares), usuario_id: str = None, db: Session = Depends(get_db)):
+    try:
+        request_json = await request.json()
+        
+        usuarioPartial = UsuarioPartial(**request_json)
+        
+        usuario = UsuarioModel(
+            usuario_cpf=usuarioPartial.usuario_cpf,
+            usuario_nome=usuarioPartial.usuario_nome,
+            usuario_email=usuarioPartial.usuario_email,
+            usuario_senha=usuarioPartial.usuario_senha,
+            usuario_telefone=usuarioPartial.usuario_telefone
+        )
+        
+        usuarioDb = update_usuario(db, usuario_id, usuario)
+        usuarioDb.usuario_senha = None
+        return usuarioDb
+    except Exception as e:
+        if(request.app.state.debug):
+            raise HTTPException(status_code=404, detail=str(e))
+        
+        raise HTTPException(status_code=404, detail=MensagemErro(404).message)
+    
+@app.delete("/usuario/{usuario_id}")
+async def deleteUsuario(request: Request, response: Response, middleware: Mapping = Depends(middlewares), usuario_id: str = None, db: Session = Depends(get_db)):
+    try:
+        usuarioDb = delete_usuario(db, usuario_id)
+        usuarioDb.usuario_senha = None
+        return usuarioDb
+    except Exception as e:
+        if(request.app.state.debug):
+            raise HTTPException(status_code=404, detail=str(e))
+        
+        raise HTTPException(status_code=404, detail=MensagemErro(404).message)
+
