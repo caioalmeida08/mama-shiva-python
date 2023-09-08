@@ -3,8 +3,8 @@ from fastapi import Request
 def isContentTypeApplicationJson(request: Request) -> bool:
     print("isContentTypeApplicationJson (isContentTypeApplicationJson.py) - START")
     
-    if (request.method == "GET"):
-        print("isContentTypeApplicationJson (isContentTypeApplicationJson.py) - OK (GET)")
+    if (request.method == "GET" or request.method == "DELETE"):
+        print("isContentTypeApplicationJson (isContentTypeApplicationJson.py) - OK (GET or DELETE)")
         return True
 
     content_type = request.headers.get("Content-Type")

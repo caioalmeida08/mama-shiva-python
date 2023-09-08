@@ -98,6 +98,10 @@ def update_usuario(db: Session, usuario_id: str, usuario: Usuario):
 def delete_usuario(db: Session, usuario_id: str):
     print("delete_usuario")
     db_usuario = db.query(UsuarioModel).filter(UsuarioModel.usuario_id == usuario_id).first()
+    
+    if db_usuario is None:
+        raise Exception("Usuário não encontrado")
+    
     db.delete(db_usuario)
     db.commit()
     return db_usuario

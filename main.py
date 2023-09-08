@@ -86,16 +86,8 @@ async def createUsuario(request: Request, response: Response, middleware: Mappin
         request_json = await request.json()
         
         usuarioPartial = UsuarioPartial(**request_json)
-
-        usuario = UsuarioModel(
-            usuario_cpf=usuarioPartial.usuario_cpf,
-            usuario_nome=usuarioPartial.usuario_nome,
-            usuario_email=usuarioPartial.usuario_email,
-            usuario_senha=usuarioPartial.usuario_senha,
-            usuario_telefone=usuarioPartial.usuario_telefone
-        )
         
-        usuarioDb = create_usuario(db, usuario)
+        usuarioDb = create_usuario(db, usuarioPartial.dict())
         usuarioDb.usuario_senha = None
         return usuarioDb
         
@@ -169,16 +161,9 @@ async def updateUsuario(request: Request, response: Response, middleware: Mappin
         
         usuarioPartial = UsuarioPartial(**request_json)
         
-        usuario = UsuarioModel(
-            usuario_cpf=usuarioPartial.usuario_cpf,
-            usuario_nome=usuarioPartial.usuario_nome,
-            usuario_email=usuarioPartial.usuario_email,
-            usuario_senha=usuarioPartial.usuario_senha,
-            usuario_telefone=usuarioPartial.usuario_telefone
-        )
-        
-        usuarioDb = update_usuario(db, usuario_id, usuario)
+        usuarioDb = update_usuario(db, usuario_id, usuarioPartial.dict())
         usuarioDb.usuario_senha = None
+        
         return usuarioDb
     except Exception as e:
         if(request.app.state.debug):
