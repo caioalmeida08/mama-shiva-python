@@ -14,6 +14,10 @@ def get_all_reserva(db: Session):
     print("get_all_reserva")
     return db.query(ReservaModel).all()
 
+def get_reserva_by_id(db: Session, reserva_id: str):
+    print("get_reserva_by_id")
+    return db.query(ReservaModel).filter(ReservaModel.reserva_id == reserva_id).first()
+
 def create_reserva(db: Session, reserva: Reserva):
     print("create_reserva")
     db_reserva = ReservaModel(**reserva)

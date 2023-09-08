@@ -7,7 +7,7 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
 from sqlalchemy.orm import Session
-from controllers.reserva import get_all_reserva
+from controllers.reserva import create_reserva, delete_reserva, get_all_reserva, get_reserva_by_id, update_reserva
 
 from database.database import SessionLocal, engine
 
@@ -15,6 +15,7 @@ from controllers.usuario import create_usuario, delete_usuario, get_all_usuario,
 from models.reserva import ReservaModel
 
 from models.usuario import UsuarioModel
+from schemas.reserva import ReservaPartial
 
 from schemas.usuario import Usuario, UsuarioPartial
 from schemas.mensagem_erro import MensagemErro
@@ -197,3 +198,89 @@ async def findAllReserva(request: Request, response: Response, middleware: Mappi
             raise HTTPException(status_code=400, detail=str(e))
         
         raise HTTPException(status_code=400, detail=MensagemErro(400).message)
+    
+@app.post("/reserva/")
+async def createReserva(request: Request, response: Response, middleware: Mapping = Depends(middlewares), db: Session = Depends(get_db)):
+    try:
+        request_json = await request.json()
+        
+        reserva_horario_allowed_values = [
+            "07:00",
+            "08:00",
+            "09:00",
+            "10:00",
+            "11:00",
+            "12:00",
+            "13:00",
+            "14:00",
+            "15:00",
+            "16:00",
+            "17:00"
+        ]
+        
+        if (not request_json.get("reserva_horario") in reserva_horario_allowed_values):
+            raise Exception("O campo 'reserva_horario' deve ser um dos seguintes valores: " + str(reserva_horario_allowed_values))
+        
+        isUsuarioDb = get_usuario_by_id(db, request_json.get("fk_usuario_id"))
+        
+        if (not isUsuarioDb):
+            raise Exception("O usuário informado não existe")
+        
+        reservaPartial = ReservaPartial(**request_json)
+        
+        reservaDb = create_reserva(db, reservaPartial.dict())
+        return reservaDb
+    except Exception as e:
+        if(request.app.state.debug):
+            raise HTTPException(status_code=400, detail=str(e))
+        
+        raise HTTPException(status_code=400, detail=MensagemErro(400).message)
+    
+@app.put("/reserva/{reserva_id}")
+async def updateReserva(request: Request, response: Response, middleware: Mapping = Depends(middlewares), reserva_id: str = None, db: Session = Depends(get_db)):
+    try:
+        request_json = await request.json()
+        
+        reserva_horario_allowed_values = [
+            "07:00",
+            "08:00",
+            "09:00",
+            "10:00",
+            "11:00",
+            "12:00",
+            "13:00",
+            "14:00",
+            "15:00",
+            "16:00",
+            "17:00"
+        ]
+        
+        if (not request_json.get("reserva_horario") in reserva_horario_allowed_values):
+            raise Exception("O campo 'reserva_horario' deve ser um dos seguintes valores: " + str(reserva_horario_allowed_values))
+        
+        isUsuarioDb = get_usuario_by_id(db, request_json.get("fk_usuario_id"))
+        
+        if (not isUsuarioDb):
+            raise Exception("O usuário informado não existe")
+        
+        reservaPartial = ReservaPartial(**request_json)
+        
+        reservaDb = update_reserva(db, reserva_id, reservaPartial.dict())
+        return reservaDb
+    
+    except Exception as e:
+        if(request.app.state.debug):
+            raise HTTPException(status_code=400, detail=str(e))
+        
+        raise HTTPException(status_code=400, detail=MensagemErro(400).message)
+    
+@app.delete("/reserva/{reserva_id}")
+async def deleteReserva(request: Request, response: Response, middleware: Mapping = Depends(middlewares), reserva_id: str = None, db: Session = Depends(get_db)):
+    try:
+        reservaDb = delete_reserva(db, reserva_id)
+        return reservaDb
+    except Exception as e:
+        if(request.app.state.debug):
+            raise HTTPException(status_code=404, detail=str(e))
+        
+        raise HTTPException(status_code=404, detail=MensagemErro(404).message)

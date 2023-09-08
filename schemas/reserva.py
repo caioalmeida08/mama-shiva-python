@@ -6,8 +6,8 @@ from datetime import date, datetime, time, timedelta
 
 # Define o modelo Pydantic para a entrada de informações ao criar um usuário
 class ReservaPartial(BaseModel):
-    reserva_data: date = Field(...)
-    reserva_horario: time = Field(...)
+    reserva_data: str = Field(..., regex="^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+    reserva_horario: str = Field(...)
     fk_usuario_id: str = Field(..., max_length=36, min_lenght=36)
     
     class Config:
