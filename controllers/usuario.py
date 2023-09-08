@@ -59,7 +59,7 @@ def check_token(token: str) -> None:
         print("check_token (usuario.py) - token: " + str(token))
         raise HTTPException(
             status_code=400,
-            detail="Could not validate credentials",
+            detail="Credenciais inválidas",
             headers={"Authenticate": "Bearer"},
         )
         
