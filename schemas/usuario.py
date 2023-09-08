@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 
+from schemas.endereco import EnderecoPartial
+
 # Define o modelo Pydantic para a entrada de informações ao criar um usuário
 class UsuarioPartial(BaseModel):
     usuario_cpf: str = Field(..., max_length=11, min_length=11)
@@ -10,7 +12,7 @@ class UsuarioPartial(BaseModel):
     
     class Config:
         from_attributes = True
-    
+        
 # Define o modelo Pydantic para a saída de informações do usuário
 class Usuario(UsuarioPartial):
     usuario_id: str = Field(..., max_length=36, min_length=36, primary_key=True)

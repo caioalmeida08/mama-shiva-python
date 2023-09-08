@@ -7,12 +7,15 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
 from sqlalchemy.orm import Session
+from controllers.endereco import get_all_endereco
 
 from database.database import SessionLocal, engine
 
-from controllers.usuario import create_usuario, delete_usuario, get_all_usuario, get_usuario_by_email,get_usuario_by_id, create_access_token, create_refresh_token, update_usuario
+from controllers.usuario import create_endereco, create_usuario, delete_usuario, get_all_usuario, get_usuario_by_email,get_usuario_by_id, create_access_token, create_refresh_token, update_usuario
 
-from models.usuario import UsuarioModel
+from models.usuario import EnderecoModel, UsuarioModel
+from schemas.endereco import EnderecoPartial
+# from models.endereco import EnderecoModel
 
 from schemas.usuario import Usuario, UsuarioPartial
 from schemas.mensagem_erro import MensagemErro
@@ -58,7 +61,9 @@ async def middlewares(request: Request):
             raise HTTPException(status_code=401, detail=MensagemErro(401).message)
     
 # Cria uma conexão com o banco de dados
+# EnderecoModel.metadata.create_all(bind=engine)
 UsuarioModel.metadata.create_all(bind=engine)
+
 def get_db():
     db = SessionLocal()
     try:
@@ -86,18 +91,27 @@ async def createUsuario(request: Request, response: Response, middleware: Mappin
         request_json = await request.json()
         
         usuarioPartial = UsuarioPartial(**request_json)
-
-        usuario = UsuarioModel(
-            usuario_cpf=usuarioPartial.usuario_cpf,
-            usuario_nome=usuarioPartial.usuario_nome,
-            usuario_email=usuarioPartial.usuario_email,
-            usuario_senha=usuarioPartial.usuario_senha,
-            usuario_telefone=usuarioPartial.usuario_telefone
-        )
+        enderecoPartial = EnderecoPartial(**request_json.get("usuario_endereco"))
+        
+        usuario = usuarioPartial.dict()
+        endereco = enderecoPartial.dict()
+        
+        usuario["usuario_endereco"] = endereco
         
         usuarioDb = create_usuario(db, usuario)
+        enderecoDb = create_endereco(db, endereco, usuarioDb.usuario_id)
+        
         usuarioDb.usuario_senha = None
-        return usuarioDb
+        
+        returnObject = {
+            "usuario_id": usuarioDb.usuario_id,
+            "usuario_nome": usuarioDb.usuario_nome,
+            "usuario_email": usuarioDb.usuario_email,
+            "usuario_telefone": usuarioDb.usuario_telefone,
+            "usuario_endereco": enderecoDb
+        }
+        
+        return returnObject
         
     except Exception as e:
         if(request.app.state.debug):
@@ -198,3 +212,14 @@ async def deleteUsuario(request: Request, response: Response, middleware: Mappin
         
         raise HTTPException(status_code=404, detail=MensagemErro(404).message)
 
+@app.get("/endereco/")
+async def findAllEndereco(request: Request, response: Response, middleware: Mapping = Depends(middlewares), db: Session = Depends(get_db)):
+    try:
+        enderecos = get_all_endereco(db)
+        return enderecos 
+    except Exception as e:
+        if(request.app.state.debug):
+            raise HTTPException(status_code=400, detail=str(e))
+        
+        raise HTTPException(status_code=400, detail=MensagemErro(400).message)
+    

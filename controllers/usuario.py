@@ -1,5 +1,6 @@
 from fastapi import HTTPException
-from models.usuario import UsuarioModel
+from models.usuario import EnderecoModel, UsuarioModel
+from schemas.endereco import EnderecoPartial
 from schemas.usuario import Usuario
 
 from sqlalchemy.orm import Session
@@ -59,17 +60,31 @@ def check_token(token: str) -> None:
         print("check_token (usuario.py) - token: " + str(token))
         raise HTTPException(
             status_code=400,
-            detail="Could not validate credentials",
+            detail="Credienciais inválidas",
             headers={"Authenticate": "Bearer"},
         )
         
 def get_all_usuario(db: Session):
     print("get_all_usuario")
-    return db.query(UsuarioModel).all()
+    usuariosDb = db.query(UsuarioModel).all()
+    
+    for usuario in range(usuariosDb.__len__()):
+        usuario_temp = usuariosDb.__getitem__(usuario)
+        usuario_temp.usuario_endereco = db.query(EnderecoModel).filter(EnderecoModel.fk_usuario_id == usuario_temp.usuario_id).first()        
+
+    return usuariosDb
 
 def get_usuario_by_id(db: Session, usuario_id: str):
     print("get_usuario_by_id")
-    return db.query(UsuarioModel).filter(UsuarioModel.usuario_id == usuario_id).first()
+    usuario = db.query(UsuarioModel).filter(UsuarioModel.usuario_id == usuario_id).first()
+    endereco = db.query(EnderecoModel).filter(EnderecoModel.fk_usuario_id == usuario.usuario_id).first()        
+        
+    print("get_usuario_by_id - usuario: " + str(usuario))
+    print("get_usuario_by_id - endereco: " + str(endereco))
+    
+    usuario.usuario_endereco = endereco
+    
+    return usuario
 
 def get_usuario_by_email(db: Session, usuario_email: str):
     print("get_usuario_by_email")
@@ -81,6 +96,7 @@ def create_usuario(db: Session, usuario: Usuario):
     db.add(db_usuario)
     db.commit()
     db.refresh(db_usuario)
+    
     return db_usuario
 
 def update_usuario(db: Session, usuario_id: str, usuario: Usuario):
@@ -101,3 +117,12 @@ def delete_usuario(db: Session, usuario_id: str):
     db.delete(db_usuario)
     db.commit()
     return db_usuario
+
+def create_endereco(db: Session, endereco: str, usuario_id: str):
+    print("create_endereco")
+    db_endereco = EnderecoModel(**endereco)
+    db_endereco.fk_usuario_id = usuario_id
+    db.add(db_endereco)
+    db.commit()
+    db.refresh(db_endereco)
+    return db_endereco
