@@ -30,7 +30,9 @@ async def isAuth(request: Request) -> bool:
         return False
     
     print("isAuth (isAuth.py) - (STARTING CHECK)")
-    check_token(request.headers.get("Authorization"))
     
+    if (not check_token(request.headers.get("Authorization"))):
+        print("isAuth (isAuth.py) - NOT OK (INVALID TOKEN)")
+        return False
     
     return True

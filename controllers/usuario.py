@@ -44,24 +44,19 @@ def check_token(token: str) -> None:
         payload = jwt.decode(
             token, JWT_SECRET_KEY, algorithms=[ALGORITHM]
         )
+        
         print("check_token (usuario.py) - payload: " + str(payload))
         
         if datetime.fromtimestamp(payload["exp"]) < datetime.now():
-            raise HTTPException(
-                status_code = 401,
-                detail="Token expired",
-                headers={"Authenticate": "Bearer"},
-            )
+            return False
+        
+        return True
             
     except(jwt.JWTError, ValidationError):
         print("check_token (usuario.py) - JWTError")
         print("check_token (usuario.py) - ValidationError")
         print("check_token (usuario.py) - token: " + str(token))
-        raise HTTPException(
-            status_code=401,
-            detail="Credenciais inválidas",
-            headers={"Authenticate": "Bearer"},
-        )
+        return False
         
 def get_all_usuario(db: Session):
     print("get_all_usuario")

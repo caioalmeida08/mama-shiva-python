@@ -26,7 +26,7 @@ from middlewares.isAuth import isAuth
 app = FastAPI()
 
 # Habilita ou desabilita o modo de debug
-app.state.debug = True
+app.state.debug = False
 
 # Middlewares
 async def middlewares(request: Request):
@@ -53,7 +53,7 @@ async def middlewares(request: Request):
     
     if (not isAuthMiddleware):
         if (request.app.state.debug):
-            raise HTTPException(status_code=401, detail="Não autorizado")
+            raise HTTPException(status_code=401, detail="O token de autenticação é inválido")
         else:
             raise HTTPException(status_code=401, detail=MensagemErro(401).message)
     
