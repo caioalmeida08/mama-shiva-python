@@ -7,10 +7,12 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
 from sqlalchemy.orm import Session
+from controllers.reserva import get_all_reserva
 
 from database.database import SessionLocal, engine
 
 from controllers.usuario import create_usuario, delete_usuario, get_all_usuario, get_usuario_by_email,get_usuario_by_id, create_access_token, create_refresh_token, update_usuario
+from models.reserva import ReservaModel
 
 from models.usuario import UsuarioModel
 
@@ -26,7 +28,7 @@ from middlewares.isAuth import isAuth
 app = FastAPI()
 
 # Habilita ou desabilita o modo de debug
-app.state.debug = False
+app.state.debug = True
 
 # Middlewares
 async def middlewares(request: Request):
@@ -59,6 +61,8 @@ async def middlewares(request: Request):
     
 # Cria uma conexão com o banco de dados
 UsuarioModel.metadata.create_all(bind=engine)
+ReservaModel.metadata.create_all(bind=engine)
+
 def get_db():
     db = SessionLocal()
     try:
@@ -183,3 +187,13 @@ async def deleteUsuario(request: Request, response: Response, middleware: Mappin
         
         raise HTTPException(status_code=404, detail=MensagemErro(404).message)
 
+@app.get("/reserva/")
+async def findAllReserva(request: Request, response: Response, middleware: Mapping = Depends(middlewares), db: Session = Depends(get_db)):
+    try:
+        reservas = get_all_reserva(db)
+        return reservas
+    except Exception as e:
+        if(request.app.state.debug):
+            raise HTTPException(status_code=400, detail=str(e))
+        
+        raise HTTPException(status_code=400, detail=MensagemErro(400).message)
