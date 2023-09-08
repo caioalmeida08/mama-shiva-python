@@ -86,11 +86,12 @@ def create_usuario(db: Session, usuario: Usuario):
 def update_usuario(db: Session, usuario_id: str, usuario: Usuario):
     print("update_usuario")
     db_usuario = db.query(UsuarioModel).filter(UsuarioModel.usuario_id == usuario_id).first()
-    db_usuario.usuario_cpf = usuario.usuario_cpf
-    db_usuario.usuario_nome = usuario.usuario_nome
-    db_usuario.usuario_email = usuario.usuario_email
-    db_usuario.usuario_senha = usuario.usuario_senha
-    db_usuario.usuario_telefone = usuario.usuario_telefone
+    
+    if db_usuario is None:
+        raise Exception("Usuário não encontrado")
+    
+    db.query(UsuarioModel).filter(UsuarioModel.usuario_id == usuario_id).update(usuario)
+    
     db.commit()
     db.refresh(db_usuario)
     return db_usuario
