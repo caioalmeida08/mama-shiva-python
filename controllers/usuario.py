@@ -58,7 +58,7 @@ def check_token(token: str) -> None:
         print("check_token (usuario.py) - ValidationError")
         print("check_token (usuario.py) - token: " + str(token))
         raise HTTPException(
-            status_code=400,
+            status_code=401,
             detail="Credenciais inválidas",
             headers={"Authenticate": "Bearer"},
         )
