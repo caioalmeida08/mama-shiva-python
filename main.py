@@ -22,6 +22,7 @@ from schemas.mensagem_erro import MensagemErro
 
 from middlewares.isContentTypeApplicationJson import isContentTypeApplicationJson
 from middlewares.isRequestBodyOK import isRequestBodyOK
+from middlewares.isRequestBodyOK import isReservaRequestBodyOK
 from middlewares.isAuth import isAuth
 
 
@@ -30,6 +31,7 @@ app = FastAPI()
 
 # Habilita ou desabilita o modo de debug
 app.state.debug = True
+
 
 # Middlewares
 async def middlewares(request: Request):
@@ -189,15 +191,30 @@ async def deleteUsuario(request: Request, response: Response, middleware: Mappin
         raise HTTPException(status_code=404, detail=MensagemErro(404).message)
 
 @app.get("/reserva/")
-async def findAllReserva(request: Request, response: Response, middleware: Mapping = Depends(middlewares), db: Session = Depends(get_db)):
+async def findAllReserva(request: Request,response: Response,middleware: Mapping = Depends(middlewares),db: Session = Depends(get_db)
+):
     try:
+        isRequestBodyOKMiddleware = await isReservaRequestBodyOK(request)
+        if not isRequestBodyOKMiddleware:
+            return JSONResponse(content={"error": "Corpo da solicitação inválido"}, status_code=400)
+
         reservas = get_all_reserva(db)
         return reservas
     except Exception as e:
-        if(request.app.state.debug):
+        if request.app.state.debug:
             raise HTTPException(status_code=400, detail=str(e))
-        
         raise HTTPException(status_code=400, detail=MensagemErro(400).message)
+    
+@app.get("/reserva/{reserva_id}")
+async def findReservaById(request: Request, response: Response, middleware: Mapping = Depends(middlewares), reserva_id: str = None, db: Session = Depends(get_db)):
+    try:
+        reserva = get_reserva_by_id(db, reserva_id)
+        return reserva
+    except Exception as e:
+        if(request.app.state.debug):
+            raise HTTPException(status_code=404, detail=str(e))
+        
+        raise HTTPException(status_code=404, detail=MensagemErro(404).message)
     
 @app.post("/reserva/")
 async def createReserva(request: Request, response: Response, middleware: Mapping = Depends(middlewares), db: Session = Depends(get_db)):
@@ -230,6 +247,7 @@ async def createReserva(request: Request, response: Response, middleware: Mappin
         
         reservaDb = create_reserva(db, reservaPartial.dict())
         return reservaDb
+    
     except Exception as e:
         if(request.app.state.debug):
             raise HTTPException(status_code=400, detail=str(e))
